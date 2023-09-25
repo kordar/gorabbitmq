@@ -21,10 +21,12 @@ type Receiver interface {
 type RabbitMQ struct {
 	wg sync.WaitGroup
 
-	channel      *amqp.Channel
-	exchangeName string // exchange的名称
-	exchangeType string // exchange的类型
-	receivers    []Receiver
+	queueDurable    bool
+	exchangeDurable bool
+	channel         *amqp.Channel
+	exchangeName    string // exchange的名称
+	exchangeType    string // exchange的类型
+	receivers       []Receiver
 }
 
 // RegisterReceiver 注册一个用于接收指定队列指定路由的数据接收者
@@ -44,12 +46,12 @@ func (mq *RabbitMQ) listen(receiver Receiver) {
 
 	// 申明Queue
 	_, err := mq.channel.QueueDeclare(
-		queueName, // name
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive(排他性队列)
-		false,     // no-wait
-		nil,       // arguments
+		queueName,       // name
+		mq.queueDurable, // durable
+		false,           // delete when unused
+		false,           // exclusive(排他性队列)
+		false,           // no-wait
+		nil,             // arguments
 	)
 	if nil != err {
 		// 当队列初始化失败的时候，需要告诉这个接收者相应的错误
@@ -104,13 +106,13 @@ func (mq *RabbitMQ) listen(receiver Receiver) {
 func (mq *RabbitMQ) prepareExchange() error {
 	// 申明Exchange
 	err := mq.channel.ExchangeDeclare(
-		mq.exchangeName, // exchange
-		mq.exchangeType, // type
-		true,            // durable
-		false,           // autoDelete
-		false,           // internal
-		false,           // noWait
-		nil,             // args
+		mq.exchangeName,    // exchange
+		mq.exchangeType,    // type
+		mq.exchangeDurable, // durable
+		false,              // autoDelete
+		false,              // internal
+		false,              // noWait
+		nil,                // args
 	)
 
 	if nil != err {
@@ -172,5 +174,15 @@ func NewRabbitMQ(exchangeName string, exchangeType string) *RabbitMQ {
 	return &RabbitMQ{
 		exchangeName: exchangeName,
 		exchangeType: exchangeType,
+	}
+}
+
+func NewRabbitMQWithDurable(exchangeName string, exchangeType string, exchangeDurable bool, queueDurable bool) *RabbitMQ {
+	// 这里可以根据自己的需要去定义
+	return &RabbitMQ{
+		exchangeName:    exchangeName,
+		exchangeType:    exchangeType,
+		exchangeDurable: exchangeDurable,
+		queueDurable:    queueDurable,
 	}
 }
