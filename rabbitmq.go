@@ -168,6 +168,15 @@ func (mq *RabbitMQ) Start(manager RabbitManager) {
 	}
 }
 
+func (mq *RabbitMQ) StartD(manager RabbitManager, dur time.Duration) {
+	for {
+		mq.run(manager)
+		// 一旦连接断开，那么需要隔一段时间去重连
+		// 这里最好有一个时间间隔
+		time.Sleep(dur)
+	}
+}
+
 // NewRabbitMQ New 创建一个新的操作RabbitMQ的对象
 func NewRabbitMQ(exchangeName string, exchangeType string) *RabbitMQ {
 	// 这里可以根据自己的需要去定义
