@@ -8,6 +8,15 @@ import (
 	"time"
 )
 
+type ExchangeType string
+
+var (
+	Direct ExchangeType = "direct"
+	Topic  ExchangeType = "topic"
+	Fanout ExchangeType = "fanout"
+	Header ExchangeType = "header"
+)
+
 // Receiver 观察者模式需要的接口
 // 观察者用于接收指定的queue到来的数据
 type Receiver interface {
@@ -24,9 +33,21 @@ type RabbitMQ struct {
 	queueDurable    bool
 	exchangeDurable bool
 	channel         *amqp.Channel
-	exchangeName    string // exchange的名称
-	exchangeType    string // exchange的类型
+	exchangeName    string       // exchange的名称
+	exchangeType    ExchangeType // exchange的类型
 	receivers       []Receiver
+	// 如果 autoDelete 设置为 true，当最后一个消费者取消订阅后，队列（或交换器）会被自动删除。
+	// 适用于不需要长期保存的临时队列，比如只为某个短期任务或事件服务的队列。
+	autoDelete bool
+	// 如果 exclusive 设置为 true，队列将只对声明它的连接可见，即只有该连接可以使用此队列。
+	// 一旦该连接关闭，独占队列会被自动删除。
+	// 常用于私有或一次性使用的队列场景，例如在远程过程调用（RPC）中，一个客户端需要访问的专用队列。
+	exclusive bool
+	// 如果 noWait 设置为 true，客户端在声明队列、交换器或绑定后，不等待代理（broker）的响应。
+	// 这样可以减少延迟，因为客户端无需等待确认消息。
+	// 但如果出现问题（如队列已存在但属性不同），不会立即得到反馈，可能会增加调试难度。
+	noWait bool
+	args   amqp.Table
 }
 
 // RegisterReceiver 注册一个用于接收指定队列指定路由的数据接收者
