@@ -28,6 +28,6 @@ func (c *DefaultConn) Destroy() {
 	_ = c.conn.Close()
 }
 
-func NewRabbitMQConn(dsn string) Conn {
+func NewDefaultConn(dsn string) Conn {
 	return &DefaultConn{dsn: dsn}
 }
